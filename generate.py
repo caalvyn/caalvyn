@@ -179,8 +179,12 @@ def build_svg(theme_name, stats, art_lines):
             f'font-family="{FONT}" font-size="14" fill="{t["art"]}">'
             f'{esc(l)}</text>')
 
-    # --- info (right) ---
-    iy = y
+    # --- info (right) --- vertically centered against the portrait ---
+    def item_h(it):
+        return (LINE_H // 2 + 3) if it[0] == "gap" else LINE_H
+    info_px = sum(item_h(it) for it in items)
+    portrait_px = len(art_lines) * LINE_H
+    iy = y + max(0, (portrait_px - info_px) // 2)
     for it in items:
         if it[0] == "gap":
             iy += LINE_H // 2 + 3
