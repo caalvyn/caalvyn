@@ -23,10 +23,10 @@ TOKEN = os.environ.get("GITHUB_TOKEN", "")
 PROFILE = {
     "title": f"{USER}@dev",
     "rows_top": [
-        ("OS", "Linux, macOS, Windows"),
-        ("Uptime", "22 years"),
+        ("OS", "Linux, Windows"),
+        ("Uptime", "25 years"),
         ("Host", "calvyn.dev"),
-        ("Editor", "VS Code, Neovim"),
+        ("IDE", "VS Code, IDEA, WebStorm"),
         ("Shell", "bash / zsh"),
     ],
     "rows_lang": [
@@ -35,11 +35,11 @@ PROFILE = {
         ("Languages.Real", "English"),
     ],
     "rows_hobby": [
-        ("Hobbies.Software", "Self-hosting, AI tooling, web design"),
-        ("Hobbies.Hardware", "Home lab, Linux tinkering"),
+        ("Hobbies.Software", "Autonomous Builds, AI tooling, Web Developer"),
+        ("Hobbies.Hardware", "Home Lab"),
     ],
     "rows_contact": [
-        ("Email", "caalvyn@icloud.com"),
+        ("Email", "calvyn.dev@icloud.com"),
         ("Website", "https://calvyn.dev"),
         ("GitHub", f"@{USER}"),
     ],
