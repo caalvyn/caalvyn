@@ -153,11 +153,13 @@ def build_svg(theme_name, stats, art_lines):
         ("row", "Following", stats["following"]),
     ]
 
-    # inner column width (chars) = widest "label + 2 + value", also >= headers
+    # inner column width (chars). Rows need label + value + >=1 dot + 2 spaces,
+    # so use +3 to guarantee even the longest value right-aligns to `cols`
+    # (not 1 char past it). Headers need label + space + >=2 dashes.
     cols = 2
     for it in items:
         if it[0] == "row":
-            cols = max(cols, len(str(it[1])) + len(str(it[2])) + 2)
+            cols = max(cols, len(str(it[1])) + len(str(it[2])) + 3)
         elif it[0] == "header":
             cols = max(cols, len(str(it[1])) + 3)
 
