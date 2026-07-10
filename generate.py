@@ -134,15 +134,41 @@ def build_svg(theme_name, stats, art_lines):
     y = 34
     parts = []
 
-    def line(x, spans, ypos):
-        inner = "".join(spans)
-        parts.append(
-            f'<text x="{x}" y="{ypos}" xml:space="preserve" '
-            f'font-family="{FONT}" font-size="14">{inner}</text>')
+    # --- flatten the info side into an ordered list of items ---
+    # ("gap",) | ("header", text) | ("row", label, value)
+    items = [("header", PROFILE["title"])]
+    items += [("row", k, v) for k, v in PROFILE["rows_top"]]
+    items += [("gap",)]
+    items += [("row", k, v) for k, v in PROFILE["rows_lang"]]
+    items += [("gap",)]
+    items += [("row", k, v) for k, v in PROFILE["rows_hobby"]]
+    items += [("gap",), ("header", "Contact")]
+    items += [("row", k, v) for k, v in PROFILE["rows_contact"]]
+    items += [("gap",), ("header", "GitHub Stats")]
+    items += [
+        ("row", "Repos", stats["repos"]),
+        ("row", "Stars", stats["stars"]),
+        ("row", "Commits (this year)", stats["commits"]),
+        ("row", "Followers", stats["followers"]),
+        ("row", "Following", stats["following"]),
+    ]
+
+    # inner column width (chars) = widest "label + 2 + value", also >= headers
+    cols = 2
+    for it in items:
+        if it[0] == "row":
+            cols = max(cols, len(str(it[1])) + len(str(it[2])) + 2)
+        elif it[0] == "header":
+            cols = max(cols, len(str(it[1])) + 3)
 
     def span(text, color, bold=False):
         w = ' font-weight="600"' if bold else ""
         return f'<tspan fill="{color}"{w}>{esc(text)}</tspan>'
+
+    def line(x, spans, ypos):
+        parts.append(
+            f'<text x="{x}" y="{ypos}" xml:space="preserve" '
+            f'font-family="{FONT}" font-size="14">{"".join(spans)}</text>')
 
     # --- portrait (left) ---
     for i, l in enumerate(art_lines):
@@ -153,49 +179,25 @@ def build_svg(theme_name, stats, art_lines):
 
     # --- info (right) ---
     iy = y
-
-    def header(text):
-        nonlocal iy
-        dashes = "-" * max(2, INNER_COLS - len(text) - 1)
-        line(info_x, [span(text + " ", t["title"], True),
-                      span(dashes, t["sep"])], iy)
-        iy += LINE_H
-
-    def row(label, value, vcolor=None):
-        nonlocal iy
-        lb, dots, val = leader_row(label, value)
-        line(info_x, [span(lb, t["label"], True),
-                      span(dots, t["sep"]),
-                      span(val, vcolor or t["value"])], iy)
-        iy += LINE_H
-
-    def gap():
-        nonlocal iy
-        iy += LINE_H // 2 + 3
-
-    header(PROFILE["title"])
-    for k, v in PROFILE["rows_top"]:
-        row(k, v)
-    gap()
-    for k, v in PROFILE["rows_lang"]:
-        row(k, v)
-    gap()
-    for k, v in PROFILE["rows_hobby"]:
-        row(k, v)
-    gap()
-    header("Contact")
-    for k, v in PROFILE["rows_contact"]:
-        row(k, v)
-    gap()
-    header("GitHub Stats")
-    row("Repos", stats["repos"])
-    row("Stars", stats["stars"])
-    row("Commits (this year)", stats["commits"])
-    row("Followers", stats["followers"])
-    row("Following", stats["following"])
+    for it in items:
+        if it[0] == "gap":
+            iy += LINE_H // 2 + 3
+        elif it[0] == "header":
+            text = it[1]
+            dashes = "-" * max(2, cols - len(text) - 1)
+            line(info_x, [span(text + " ", t["title"], True),
+                          span(dashes, t["sep"])], iy)
+            iy += LINE_H
+        else:  # row
+            label, value = str(it[1]), str(it[2])
+            fill = max(1, cols - len(label) - len(value) - 2)
+            line(info_x, [span(label, t["label"], True),
+                          span(" " + "." * fill + " ", t["sep"]),
+                          span(value, t["value"])], iy)
+            iy += LINE_H
 
     height = max(y + len(art_lines) * LINE_H, iy) + 20
-    width = info_x + int(INNER_COLS * CHAR_W) + 24
+    width = info_x + int(cols * CHAR_W) + 24
 
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
