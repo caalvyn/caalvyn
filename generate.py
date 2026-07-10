@@ -59,10 +59,16 @@ THEMES = {
     },
 }
 
-CHAR_W = 8.4          # px per monospace char at font-size 14
-LINE_H = 17           # px per line
-FONT = ("ui-monospace, 'SF Mono', 'Cascadia Code', 'Fira Code', "
-        "Consolas, 'Courier New', monospace")
+CHAR_W = 8.4          # px per monospace char at font-size 14 (info side)
+LINE_H = 17           # px per line (info side)
+# The portrait is drawn in a SMALLER font so a high-detail (many-char) face
+# fits inside the same compact footprint as a low-detail one. Keep LH = 2*CW
+# so the 2:1 cell aspect matches img2ascii's row compression (row_scale 0.5).
+PORTRAIT_FS = 8       # font-size for the portrait
+PORTRAIT_CW = 4.8     # px per char at PORTRAIT_FS
+PORTRAIT_LH = 9.6     # px per portrait line (2 * PORTRAIT_CW)
+FONT = ("'DejaVu Sans Mono', ui-monospace, 'SF Mono', 'Cascadia Code', "
+        "'Fira Code', Consolas, 'Courier New', monospace")
 INNER_COLS = 48       # dotted-leader column width for the info side
 
 
@@ -130,7 +136,7 @@ def leader_row(label, value, cols=INNER_COLS):
 def build_svg(theme_name, stats, art_lines):
     t = THEMES[theme_name]
     art_w = max(len(l) for l in art_lines)
-    info_x = 20 + int(art_w * CHAR_W) + 28
+    info_x = 20 + int(art_w * PORTRAIT_CW) + 34   # gap between portrait & info
     y = 34
     parts = []
 
@@ -172,19 +178,23 @@ def build_svg(theme_name, stats, art_lines):
             f'<text x="{x}" y="{ypos}" xml:space="preserve" '
             f'font-family="{FONT}" font-size="14">{"".join(spans)}</text>')
 
-    # --- portrait (left) ---
-    for i, l in enumerate(art_lines):
-        parts.append(
-            f'<text x="20" y="{y + i*LINE_H}" xml:space="preserve" '
-            f'font-family="{FONT}" font-size="14" fill="{t["art"]}">'
-            f'{esc(l)}</text>')
-
-    # --- info (right) --- vertically centered against the portrait ---
+    # --- portrait and info share one vertically-centered content band ---
     def item_h(it):
         return (LINE_H // 2 + 3) if it[0] == "gap" else LINE_H
     info_px = sum(item_h(it) for it in items)
-    portrait_px = len(art_lines) * LINE_H
-    iy = y + max(0, (portrait_px - info_px) // 2)
+    portrait_px = len(art_lines) * PORTRAIT_LH
+    content_h = max(info_px, portrait_px)
+
+    # --- portrait (left), small font so a high-detail face stays compact ---
+    py0 = y + (content_h - portrait_px) / 2
+    for i, l in enumerate(art_lines):
+        parts.append(
+            f'<text x="20" y="{py0 + i*PORTRAIT_LH:.1f}" xml:space="preserve" '
+            f'font-family="{FONT}" font-size="{PORTRAIT_FS}" fill="{t["art"]}">'
+            f'{esc(l)}</text>')
+
+    # --- info (right), centered in the same band ---
+    iy = y + (content_h - info_px) / 2
     for it in items:
         if it[0] == "gap":
             iy += LINE_H // 2 + 3
@@ -202,7 +212,7 @@ def build_svg(theme_name, stats, art_lines):
                           span(value, t["value"])], iy)
             iy += LINE_H
 
-    height = max(y + len(art_lines) * LINE_H, iy) + 20
+    height = int(y + content_h + 20)
     width = info_x + int(cols * CHAR_W) + 24
 
     svg = (

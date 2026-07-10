@@ -2,3 +2,5 @@ preview_*.png
 portrait50.txt
 portrait_blocks.txt
 __pycache__/
+cand_*
+experiment*.py
