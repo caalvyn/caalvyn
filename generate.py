@@ -43,6 +43,19 @@ PROFILE = {
         ("Website", "https://calvyn.dev"),
         ("GitHub", f"@{USER}"),
     ],
+    # --- GitHub Stats -------------------------------------------------------
+    # Label shown on the commits row. Use "Commits (this year)" when it's
+    # auto-fetched; change to "Commits" if you pin a lifetime total below.
+    "commits_label": "Commits",
+    # Manually pin any stat to a fixed value. Set a number (or text like
+    # "2,000+") to show it verbatim; leave None to auto-fetch from the API.
+    "stats_override": {
+        "repos": None,
+        "stars": None,
+        "commits": 200,      # lifetime total (manual); None = auto-fetch
+        "followers": None,
+        "following": None,
+    },
 }
 
 # ---- themes ----------------------------------------------------------------
@@ -151,7 +164,8 @@ def build_svg(theme_name, stats, art_lines):
     items += [
         ("row", "Repos", stats["repos"]),
         ("row", "Stars", stats["stars"]),
-        ("row", "Commits (this year)", stats["commits"]),
+        ("row", PROFILE.get("commits_label", "Commits (this year)"),
+         stats["commits"]),
         ("row", "Followers", stats["followers"]),
         ("row", "Following", stats["following"]),
     ]
@@ -230,10 +244,21 @@ def build_svg(theme_name, stats, art_lines):
     return svg
 
 
+def apply_overrides(stats):
+    """Replace any auto-fetched stat with a manual value from PROFILE, and
+    comma-format integers for display (1234 -> '1,234')."""
+    for k, v in PROFILE.get("stats_override", {}).items():
+        if v is not None:
+            stats[k] = v
+    for k, v in stats.items():
+        stats[k] = f"{v:,}" if isinstance(v, int) else str(v)
+    return stats
+
+
 def main():
     with open(os.path.join(os.path.dirname(__file__), "portrait.txt")) as f:
         art_lines = [l.rstrip("\n") for l in f if l.strip("\n")]
-    stats = fetch_stats()
+    stats = apply_overrides(fetch_stats())
     for name in ("dark", "light"):
         svg = build_svg(name, stats, art_lines)
         out = os.path.join(os.path.dirname(__file__), f"{name}_mode.svg")
